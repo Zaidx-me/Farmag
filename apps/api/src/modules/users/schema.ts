@@ -1,0 +1,1 @@
+export { updateProfileSchema } from '@poultry/validation';
