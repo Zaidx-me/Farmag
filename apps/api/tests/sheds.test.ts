@@ -20,6 +20,10 @@ async function createUser(app: ReturnType<typeof buildApp>, email: string): Prom
 
 const auth = (token: string) => ({ authorization: `Bearer ${token}` });
 
+// Module-scope farm ids so afterAll can self-clean (parallel-run isolation).
+let farmAId = '';
+let farmBId = '';
+
 describe('sheds', () => {
   const app = buildApp();
 
@@ -38,6 +42,9 @@ describe('sheds', () => {
   });
 
   afterAll(async () => {
+    // Self-clean ONLY our own farms (cascade removes their sheds + the batch under Farm A).
+    // Do NOT wipe all @test.dev rows — an auth/other suite may be mid-flight in parallel.
+    await prisma.farm.deleteMany({ where: { id: { in: [farmAId, farmBId].filter(Boolean) } } });
     await app.close();
     await prisma.$disconnect();
   });
@@ -55,7 +62,7 @@ describe('sheds', () => {
       payload: { name: 'Sheds Farm A', location: 'Lahore' },
     });
     expect(createFarmA.statusCode).toBe(200);
-    const farmAId = (createFarmA.json() as { data: { id: string } }).data.id;
+    farmAId = (createFarmA.json() as { data: { id: string } }).data.id;
 
     const createFarmB = await app.inject({
       method: 'POST',
@@ -64,7 +71,7 @@ describe('sheds', () => {
       payload: { name: 'Sheds Farm B', location: 'Karachi' },
     });
     expect(createFarmB.statusCode).toBe(200);
-    const farmBId = (createFarmB.json() as { data: { id: string } }).data.id;
+    farmBId = (createFarmB.json() as { data: { id: string } }).data.id;
 
     // 1. Owner A creates a shed under farm A → 200; list shows it.
     const createShed = await app.inject({
