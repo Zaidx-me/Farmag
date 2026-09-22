@@ -4,6 +4,7 @@ import { env } from './config/env.js';
 import { prisma } from './config/prisma.js';
 import { authRoutes } from './modules/auth/routes.js';
 import { farmsRoutes } from './modules/farms/routes.js';
+import { shedsRoutes } from './modules/sheds/routes.js';
 import { usersRoutes } from './modules/users/routes.js';
 import { registerErrorHandler } from './plugins/error-handler.js';
 import { registerAuth } from './plugins/auth.js';
@@ -28,5 +29,6 @@ export function buildApp() {
   void app.register(authRoutes, { prefix: '/api/v1/auth' });
   void app.register(usersRoutes, { prefix: '/api/v1/users' });
   void app.register(farmsRoutes, { prefix: '/api/v1/farms' });
+  void app.register(shedsRoutes, { prefix: '/api/v1' });
   return app;
 }
