@@ -1,0 +1,301 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  fullName     String
+  email        String   @unique
+  phone        String?
+  passwordHash String
+  role         String   @default("OWNER") // UserRole
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now()) @db.Timestamptz
+  updatedAt    DateTime @updatedAt @db.Timestamptz
+  farms        Farm[]   @relation("FarmOwner")
+  memberships  FarmMember[]
+  refreshTokens RefreshToken[]
+  alerts       Alert[]
+  syncOperations SyncOperation[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime @db.Timestamptz
+  revokedAt DateTime? @db.Timestamptz
+  createdAt DateTime @default(now()) @db.Timestamptz
+  @@index([userId])
+}
+
+model Farm {
+  id          String   @id @default(uuid()) @db.Uuid
+  ownerId     String   @db.Uuid
+  owner       User     @relation("FarmOwner", fields: [ownerId], references: [id])
+  name        String
+  location    String
+  address     String?
+  phone       String?
+  farmType    String?
+  notes       String?
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now()) @db.Timestamptz
+  updatedAt   DateTime @updatedAt @db.Timestamptz
+  members     FarmMember[]
+  sheds       Shed[]
+  batches     Batch[]
+  feedItems   FeedItem[]
+  medicines   Medicine[]
+  expenses    Expense[]
+  sales       Sale[]
+  alerts      Alert[]
+  @@index([ownerId])
+}
+
+model FarmMember {
+  id      String @id @default(uuid()) @db.Uuid
+  farmId  String @db.Uuid
+  farm    Farm   @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  userId  String @db.Uuid
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role    String // UserRole of the membership
+  @@unique([farmId, userId])
+  @@index([userId])
+}
+
+model Shed {
+  id        String   @id @default(uuid()) @db.Uuid
+  farmId    String   @db.Uuid
+  farm      Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  name      String
+  capacity  Int
+  type      String?
+  status    String   @default("ACTIVE")
+  notes     String?
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+  batches   Batch[]
+  @@index([farmId])
+}
+
+model Batch {
+  id                    String    @id @default(uuid()) @db.Uuid
+  farmId                String    @db.Uuid
+  farm                  Farm      @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  shedId                String    @db.Uuid
+  shed                  Shed      @relation(fields: [shedId], references: [id])
+  batchNumber           String
+  breed                 String
+  supplier              String?
+  arrivalDate           DateTime  @db.Date
+  initialBirds          Int
+  initialAverageWeightKg Decimal? @db.Decimal(12,3)
+  costPerBird           Decimal?  @db.Decimal(12,2)
+  targetSaleDate        DateTime? @db.Date
+  status                String    @default("UPCOMING") // BatchStatus
+  notes                 String?
+  createdAt             DateTime  @default(now()) @db.Timestamptz
+  updatedAt             DateTime  @updatedAt @db.Timestamptz
+  dailyRecords          DailyRecord[]
+  feedTransactions      FeedTransaction[]
+  medicineTransactions  MedicineTransaction[]
+  vaccinations          Vaccination[]
+  expenses              Expense[]
+  sales                 Sale[]
+  alerts                Alert[]
+  @@unique([farmId, batchNumber])
+  @@index([farmId, status])
+  @@index([shedId])
+}
+
+model DailyRecord {
+  id                 String    @id @default(uuid()) @db.Uuid
+  batchId            String    @db.Uuid
+  batch              Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  recordDate         DateTime  @db.Date
+  birdsAtStart       Int
+  mortality          Int
+  birdsRemaining     Int
+  feedConsumedKg     Decimal?  @db.Decimal(12,3)
+  waterConsumedLiters Decimal? @db.Decimal(12,3)
+  averageWeightKg    Decimal?  @db.Decimal(12,3)
+  temperatureC       Decimal?  @db.Decimal(6,2)
+  humidityPercent    Decimal?  @db.Decimal(6,2)
+  medicineNotes      String?
+  vaccinationNotes   String?
+  notes              String?
+  createdBy          String    @db.Uuid
+  createdAt          DateTime  @default(now()) @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @db.Timestamptz
+  @@unique([batchId, recordDate])
+  @@index([batchId, recordDate])
+}
+
+model FeedItem {
+  id                String   @id @default(uuid()) @db.Uuid
+  farmId            String   @db.Uuid
+  farm              Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  name              String
+  type              String   // FeedType
+  supplier          String?
+  unit              String
+  currentStock      Decimal  @db.Decimal(12,3)
+  lowStockThreshold Decimal  @db.Decimal(12,3)
+  createdAt         DateTime @default(now()) @db.Timestamptz
+  updatedAt         DateTime @updatedAt @db.Timestamptz
+  transactions      FeedTransaction[]
+  @@index([farmId])
+}
+
+model FeedTransaction {
+  id              String    @id @default(uuid()) @db.Uuid
+  feedItemId      String    @db.Uuid
+  feedItem        FeedItem  @relation(fields: [feedItemId], references: [id], onDelete: Cascade)
+  batchId         String?   @db.Uuid
+  batch           Batch?    @relation(fields: [batchId], references: [id])
+  type            String    // FeedTransactionType
+  quantity        Decimal   @db.Decimal(12,3)
+  unitCost        Decimal?  @db.Decimal(12,2)
+  totalCost       Decimal?  @db.Decimal(12,2)
+  transactionDate DateTime  @default(now()) @db.Date
+  notes           String?
+  createdBy       String    @db.Uuid
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+  @@index([feedItemId, transactionDate])
+  @@index([batchId])
+}
+
+model Medicine {
+  id                String   @id @default(uuid()) @db.Uuid
+  farmId            String   @db.Uuid
+  farm              Farm     @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  name              String
+  supplier          String?
+  unit              String
+  currentStock      Decimal  @db.Decimal(12,3)
+  lowStockThreshold Decimal  @db.Decimal(12,3)
+  expiryDate        DateTime? @db.Date
+  createdAt         DateTime @default(now()) @db.Timestamptz
+  updatedAt         DateTime @updatedAt @db.Timestamptz
+  transactions      MedicineTransaction[]
+  @@index([farmId])
+}
+
+model MedicineTransaction {
+  id              String    @id @default(uuid()) @db.Uuid
+  medicineId      String    @db.Uuid
+  medicine        Medicine  @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  batchId         String?   @db.Uuid
+  batch           Batch?    @relation(fields: [batchId], references: [id])
+  type            String    // MedicineTransactionType
+  quantity        Decimal   @db.Decimal(12,3)
+  transactionDate DateTime  @default(now()) @db.Date
+  notes           String?
+  createdBy       String    @db.Uuid
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+  @@index([medicineId, transactionDate])
+  @@index([batchId])
+}
+
+model Vaccination {
+  id            String    @id @default(uuid()) @db.Uuid
+  batchId       String    @db.Uuid
+  batch         Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  vaccineName   String
+  scheduledDate DateTime  @db.Date
+  completedDate DateTime? @db.Date
+  dose          Decimal?  @db.Decimal(12,3)
+  supplier      String?
+  status        String    @default("UPCOMING") // VaccinationStatus
+  notes         String?
+  createdBy     String    @db.Uuid
+  createdAt     DateTime  @default(now()) @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @db.Timestamptz
+  @@index([batchId, scheduledDate])
+}
+
+model Expense {
+  id              String    @id @default(uuid()) @db.Uuid
+  farmId          String    @db.Uuid
+  farm            Farm      @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  batchId         String?   @db.Uuid
+  batch           Batch?    @relation(fields: [batchId], references: [id])
+  category        String    // ExpenseCategory
+  description     String
+  amount          Decimal   @db.Decimal(12,2)
+  expenseDate     DateTime  @db.Date
+  supplier        String?
+  paymentStatus   String    @default("PAID") // PaymentStatus
+  receiptObjectKey String?
+  notes           String?
+  createdBy       String    @db.Uuid
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @db.Timestamptz
+  @@index([farmId, expenseDate])
+  @@index([batchId])
+}
+
+model Sale {
+  id                String    @id @default(uuid()) @db.Uuid
+  farmId            String    @db.Uuid
+  farm              Farm      @relation(fields: [farmId], references: [id], onDelete: Cascade)
+  batchId           String    @db.Uuid
+  batch             Batch     @relation(fields: [batchId], references: [id])
+  buyer             String
+  saleDate          DateTime  @db.Date
+  birdsSold         Int
+  totalWeightKg     Decimal   @db.Decimal(12,3)
+  ratePerKg         Decimal   @db.Decimal(12,2)
+  totalAmount       Decimal   @db.Decimal(12,2)
+  amountReceived    Decimal   @db.Decimal(12,2) @default(0)
+  outstandingAmount Decimal   @db.Decimal(12,2)
+  paymentStatus     String    @default("PENDING") // PaymentStatus
+  notes             String?
+  createdBy         String    @db.Uuid
+  createdAt         DateTime  @default(now()) @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @db.Timestamptz
+  @@index([farmId, saleDate])
+  @@index([batchId])
+}
+
+model Alert {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  farm      Farm?     @relation(fields: [farmId], references: [id])
+  batch     Batch?    @relation(fields: [batchId], references: [id])
+  farmId    String?   @db.Uuid
+  batchId   String?   @db.Uuid
+  type      String    // AlertType
+  severity  String    // AlertSeverity
+  title     String
+  message   String
+  isRead    Boolean   @default(false)
+  createdAt DateTime  @default(now()) @db.Timestamptz
+  readAt    DateTime? @db.Timestamptz
+  @@index([userId, createdAt])
+}
+
+model SyncOperation {
+  id            String    @id @default(uuid()) @db.Uuid
+  operationId   String    @unique // client idempotency key
+  userId        String    @db.Uuid
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entity        String
+  entityId      String?   @db.Uuid
+  operationType String    // SyncOperationType
+  payload       Json
+  status        String    @default("SYNCED") // server-side: synced only
+  retryCount    Int       @default(0)
+  lastError     String?
+  createdAt     DateTime  @default(now()) @db.Timestamptz
+  processedAt   DateTime? @db.Timestamptz
+  @@index([userId, status])
+}
