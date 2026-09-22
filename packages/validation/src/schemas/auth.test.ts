@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  changePasswordSchema,
   forgotPasswordSchema,
   loginSchema,
   refreshSchema,
@@ -54,5 +55,9 @@ describe('auth schemas', () => {
   it('allows null phone on update profile', () => {
     expect(updateProfileSchema.safeParse({ phone: null }).success).toBe(true);
     expect(updateProfileSchema.safeParse({ phone: '12' }).success).toBe(false);
+  });
+  it('accepts a valid change password payload and rejects a short newPassword', () => {
+    expect(changePasswordSchema.safeParse({ currentPassword: 'oldpass', newPassword: 'newpass123' }).success).toBe(true);
+    expect(changePasswordSchema.safeParse({ currentPassword: 'oldpass', newPassword: 'short' }).success).toBe(false);
   });
 });
