@@ -7,6 +7,7 @@ import { batchesRoutes } from './modules/batches/routes.js';
 import { dailyRecordsRoutes } from './modules/daily-records/routes.js';
 import { farmsRoutes } from './modules/farms/routes.js';
 import { feedRoutes } from './modules/feed/routes.js';
+import { medicineRoutes } from './modules/medicine/routes.js';
 import { shedsRoutes } from './modules/sheds/routes.js';
 import { usersRoutes } from './modules/users/routes.js';
 import { registerErrorHandler } from './plugins/error-handler.js';
@@ -36,5 +37,6 @@ export function buildApp() {
   void app.register(batchesRoutes, { prefix: '/api/v1' });
   void app.register(dailyRecordsRoutes, { prefix: '/api/v1' });
   void app.register(feedRoutes, { prefix: '/api/v1' });
+  void app.register(medicineRoutes, { prefix: '/api/v1' });
   return app;
 }
