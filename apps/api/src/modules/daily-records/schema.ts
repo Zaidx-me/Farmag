@@ -1,0 +1,1 @@
+export { createDailyRecordSchema, updateDailyRecordSchema } from '@poultry/validation';
