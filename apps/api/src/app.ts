@@ -5,6 +5,7 @@ import { prisma } from './config/prisma.js';
 import { authRoutes } from './modules/auth/routes.js';
 import { batchesRoutes } from './modules/batches/routes.js';
 import { dailyRecordsRoutes } from './modules/daily-records/routes.js';
+import { expensesRoutes } from './modules/expenses/routes.js';
 import { farmsRoutes } from './modules/farms/routes.js';
 import { feedRoutes } from './modules/feed/routes.js';
 import { medicineRoutes } from './modules/medicine/routes.js';
@@ -40,5 +41,6 @@ export function buildApp() {
   void app.register(feedRoutes, { prefix: '/api/v1' });
   void app.register(medicineRoutes, { prefix: '/api/v1' });
   void app.register(vaccinationsRoutes, { prefix: '/api/v1' });
+  void app.register(expensesRoutes, { prefix: '/api/v1' });
   return app;
 }
