@@ -10,6 +10,7 @@ import { feedRoutes } from './modules/feed/routes.js';
 import { medicineRoutes } from './modules/medicine/routes.js';
 import { shedsRoutes } from './modules/sheds/routes.js';
 import { usersRoutes } from './modules/users/routes.js';
+import { vaccinationsRoutes } from './modules/vaccinations/routes.js';
 import { registerErrorHandler } from './plugins/error-handler.js';
 import { registerAuth } from './plugins/auth.js';
 
@@ -38,5 +39,6 @@ export function buildApp() {
   void app.register(dailyRecordsRoutes, { prefix: '/api/v1' });
   void app.register(feedRoutes, { prefix: '/api/v1' });
   void app.register(medicineRoutes, { prefix: '/api/v1' });
+  void app.register(vaccinationsRoutes, { prefix: '/api/v1' });
   return app;
 }

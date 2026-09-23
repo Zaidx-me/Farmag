@@ -1,0 +1,1 @@
+export { createVaccinationSchema, updateVaccinationSchema } from '@poultry/validation';
