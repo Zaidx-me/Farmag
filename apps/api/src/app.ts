@@ -13,6 +13,7 @@ import { medicineRoutes } from './modules/medicine/routes.js';
 import { reportsRoutes } from './modules/reports/routes.js';
 import { salesRoutes } from './modules/sales/routes.js';
 import { shedsRoutes } from './modules/sheds/routes.js';
+import { syncRoutes } from './modules/sync/routes.js';
 import { usersRoutes } from './modules/users/routes.js';
 import { vaccinationsRoutes } from './modules/vaccinations/routes.js';
 import { registerErrorHandler } from './plugins/error-handler.js';
@@ -48,5 +49,6 @@ export function buildApp() {
   void app.register(salesRoutes, { prefix: '/api/v1' });
   void app.register(alertsRoutes, { prefix: '/api/v1' });
   void app.register(reportsRoutes, { prefix: '/api/v1' });
+  void app.register(syncRoutes, { prefix: '/api/v1' });
   return app;
 }
