@@ -273,6 +273,18 @@ CREATE TABLE sync_operations (
 );
 `;
 
+/**
+ * Key/value bookkeeping table for the sync engine: the pull cursor
+ * (`_syncCursor`) and the push entity mappings (`server:<operationId>` →
+ * server entityId). Not a domain table — repositories never operate on it.
+ */
+const META = `
+CREATE TABLE meta (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+`;
+
 const TABLE_DEFINITIONS: string[] = [
   USERS,
   FARMS,
@@ -288,6 +300,7 @@ const TABLE_DEFINITIONS: string[] = [
   SALES,
   ALERTS,
   SYNC_OPERATIONS,
+  META,
 ];
 
 /** v1 schema — all 14 tables in one SQL string (migration v1). */
