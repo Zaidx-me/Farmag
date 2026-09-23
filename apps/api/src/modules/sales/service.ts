@@ -4,6 +4,7 @@ import { prisma } from '../../config/prisma.js';
 import { ApiError, notFound } from '../../utils/errors.js';
 import { isFarmAccessible, requireRole } from '../../utils/farm-access.js';
 import { paginate } from '../../utils/pagination.js';
+import { alertGenerator } from '../alerts/generator.js';
 import { currentBirds } from '../batches/calculations.js';
 import type { CreateSaleInput, SaleListParams, UpdateSaleInput, UpdateSalePaymentInput } from './types.js';
 
@@ -116,7 +117,7 @@ export async function create(farmId: string, user: { id: string }, input: Create
   const { batchId, buyer, saleDate, birdsSold, totalWeightKg, ratePerKg, amountReceived, notes } = input;
   // Batch read + current-birds check + insert in ONE transaction so the birds check is
   // intra-transaction-consistent (sequential tx in Prisma).
-  return prisma.$transaction(async (tx) => {
+  const sale = await prisma.$transaction(async (tx) => {
     await assertBatchAndBirds(tx, batchId, farmId, birdsSold);
     const { totalAmount, received, outstanding, paymentStatus } = computeMoney(
       totalWeightKg,
@@ -143,6 +144,11 @@ export async function create(farmId: string, user: { id: string }, input: Create
       },
     });
   });
+  // Lazy alert refresh (Task 23): PAYMENT_OVERDUE/SALE_DATE_APPROACHING re-evaluated after
+  // a sale is created. The generator never throws (logs + swallows internally); belt-and-
+  // braces so a future regression can never break the sales write path.
+  await alertGenerator.evaluate(farmId);
+  return sale;
 }
 
 /**
@@ -196,7 +202,7 @@ export async function update(saleId: string, user: { id: string }, input: Update
  */
 export async function updatePayment(saleId: string, user: { id: string }, input: UpdateSalePaymentInput) {
   const { amountReceived } = input;
-  return prisma.$transaction(async (tx) => {
+  const sale = await prisma.$transaction(async (tx) => {
     const sale = await tx.sale.findUnique({ where: { id: saleId } });
     if (!sale) throw notFound('Sale not found');
     const { role } = await isFarmAccessible(sale.farmId, user.id);
@@ -211,6 +217,11 @@ export async function updatePayment(saleId: string, user: { id: string }, input:
       data: { amountReceived: received, outstandingAmount: outstanding, paymentStatus },
     });
   });
+  // Lazy alert refresh (Task 23): PAYMENT_OVERDUE re-evaluated after a payment move.
+  // The generator never throws (logs + swallows internally); belt-and-braces so a future
+  // regression can never break the sales write path.
+  await alertGenerator.evaluate(sale.farmId);
+  return sale;
 }
 
 export async function remove(saleId: string, user: { id: string }): Promise<void> {

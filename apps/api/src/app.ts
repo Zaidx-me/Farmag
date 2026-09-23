@@ -3,6 +3,7 @@ import fastifyRateLimit from '@fastify/rate-limit';
 import { env } from './config/env.js';
 import { prisma } from './config/prisma.js';
 import { authRoutes } from './modules/auth/routes.js';
+import { alertsRoutes } from './modules/alerts/routes.js';
 import { batchesRoutes } from './modules/batches/routes.js';
 import { dailyRecordsRoutes } from './modules/daily-records/routes.js';
 import { expensesRoutes } from './modules/expenses/routes.js';
@@ -45,6 +46,7 @@ export function buildApp() {
   void app.register(vaccinationsRoutes, { prefix: '/api/v1' });
   void app.register(expensesRoutes, { prefix: '/api/v1' });
   void app.register(salesRoutes, { prefix: '/api/v1' });
+  void app.register(alertsRoutes, { prefix: '/api/v1' });
   void app.register(reportsRoutes, { prefix: '/api/v1' });
   return app;
 }
