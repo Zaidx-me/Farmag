@@ -28,6 +28,14 @@ export default function AppLayout() {
         name="daily-entry/[batchId]"
         options={{ headerShown: true, title: 'Daily Entry' }}
       />
+      <Stack.Screen
+        name="feed/[feedItemId]"
+        options={{ headerShown: true, title: 'Feed Item' }}
+      />
+      <Stack.Screen
+        name="vaccination/new"
+        options={{ headerShown: true, title: 'New Vaccination' }}
+      />
     </Stack>
   );
 }
