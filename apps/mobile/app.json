@@ -24,10 +24,23 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.poultryfarm.mvp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "platforms": [
+      "android",
+      "ios",
+      "web"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "5d2d9466-7b7f-416d-94e3-d29d6adc1d3b"
+      },
+      "router": {}
+    },
+    "owner": "dev-rehman220"
   }
 }
