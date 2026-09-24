@@ -20,13 +20,15 @@ function alignDecimals(a: string, b: string): [string, string, number] {
 }
 
 function formatScaled(value: bigint, scale: number): string {
-  const abs = value < 0n ? -value : value;
+  const negative = value < 0n;
+  const abs = negative ? -value : value;
   const s = abs.toString();
-  if (scale === 0) return s;
+  if (scale === 0) return negative ? `-${s}` : s;
   const padded = s.padStart(scale + 1, '0');
   const intPart = padded.slice(0, padded.length - scale);
   const fracPart = padded.slice(padded.length - scale).replace(/0+$/, '');
-  return fracPart === '' ? intPart : `${intPart}.${fracPart}`;
+  const body = fracPart === '' ? intPart : `${intPart}.${fracPart}`;
+  return negative ? `-${body}` : body;
 }
 
 /** `a + b` as a decimal string (never negative inputs). */
@@ -40,6 +42,37 @@ export function subtractDecimalStrings(a: string, b: string): string {
   const [aScaled, bScaled, scale] = alignDecimals(a, b);
   const diff = BigInt(aScaled) - BigInt(bScaled);
   return formatScaled(diff < 0n ? 0n : diff, scale);
+}
+
+/** `a - b` as a decimal string (signed — money semantics, no floor). */
+export function subtractDecimalStringsSigned(a: string, b: string): string {
+  const [aScaled, bScaled, scale] = alignDecimals(a, b);
+  return formatScaled(BigInt(aScaled) - BigInt(bScaled), scale);
+}
+
+/**
+ * `a × b` as a decimal string, rounded to 2dp (half-up). Matches the API's
+ * Decimal(12,2) money column: totalAmount = totalWeightKg × ratePerKg is stored
+ * rounded to 2dp, so the client preview rounds identically.
+ */
+export function multiplyDecimalStrings(a: string, b: string): string {
+  const aParts = a.split('.');
+  const bParts = b.split('.');
+  const aInt = aParts[0] ?? '0';
+  const bInt = bParts[0] ?? '0';
+  const aFrac = aParts[1] ?? '';
+  const bFrac = bParts[1] ?? '';
+  const aScale = aFrac.length;
+  const bScale = bFrac.length;
+  const product = BigInt(aInt + aFrac) * BigInt(bInt + bFrac);
+  const scale = aScale + bScale;
+  const roundScale = 2;
+  if (scale <= roundScale) {
+    return formatScaled(product * 10n ** BigInt(roundScale - scale), roundScale);
+  }
+  const divisor = 10n ** BigInt(scale - roundScale);
+  const rounded = (product + divisor / 2n) / divisor;
+  return formatScaled(rounded, roundScale);
 }
 
 /** -1 when a < b, 0 when equal, 1 when a > b. */

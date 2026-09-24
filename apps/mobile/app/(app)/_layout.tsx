@@ -36,6 +36,22 @@ export default function AppLayout() {
         name="vaccination/new"
         options={{ headerShown: true, title: 'New Vaccination' }}
       />
+      <Stack.Screen
+        name="expense/new"
+        options={{ headerShown: true, title: 'New Expense' }}
+      />
+      <Stack.Screen
+        name="expense/[expenseId]"
+        options={{ headerShown: true, title: 'Expense' }}
+      />
+      <Stack.Screen
+        name="sale/new"
+        options={{ headerShown: true, title: 'New Sale' }}
+      />
+      <Stack.Screen
+        name="sale/[saleId]"
+        options={{ headerShown: true, title: 'Sale' }}
+      />
     </Stack>
   );
 }
