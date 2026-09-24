@@ -23,6 +23,11 @@ export default function AppLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="batch/[batchId]" options={{ headerShown: true, title: 'Batch' }} />
+      <Stack.Screen
+        name="daily-entry/[batchId]"
+        options={{ headerShown: true, title: 'Daily Entry' }}
+      />
     </Stack>
   );
 }

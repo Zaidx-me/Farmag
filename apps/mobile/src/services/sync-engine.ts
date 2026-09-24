@@ -14,7 +14,7 @@ import type {
 import type { SqliteConnection } from '../database/db';
 import { repositories } from '../database/repositories';
 import type { LocalTableName } from '../database/schema';
-import { syncQueue, type SyncOperation, type SyncOperationInput } from '../database/sync-queue';
+import { syncQueue, type SyncOperation, type SyncOperationInput, type SyncOperationType } from '../database/sync-queue';
 
 export interface SyncSummary {
   pushed: number;
@@ -43,6 +43,8 @@ export interface EnqueueLocalInput {
   entity: string;
   entityId: string;
   payload: Record<string, unknown>;
+  /** Defaults to CREATE — pass UPDATE to re-push an existing local entity. */
+  operationType?: SyncOperationType;
 }
 
 const PUSH_CHUNK_SIZE = 100;
@@ -168,7 +170,7 @@ export function enqueueLocal(db: SqliteConnection, input: EnqueueLocalInput): Pr
   const op: SyncOperationInput & { createdAt: string } = {
     operationId: crypto.randomUUID(),
     entity: input.entity,
-    operationType: 'CREATE',
+    operationType: input.operationType ?? 'CREATE',
     entityId: input.entityId,
     payload: JSON.stringify(input.payload),
     createdAt: new Date().toISOString(),

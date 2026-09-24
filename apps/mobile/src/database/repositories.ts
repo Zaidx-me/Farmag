@@ -20,7 +20,7 @@ export function snakeToCamel(key: string): string {
   return key.replace(SNAKE_TO_CAMEL_RE, (_match, letter: string) => letter.toUpperCase());
 }
 
-export function rowToSnake(row: Record<string, unknown>): Record<string, unknown> {
+export function rowToSnake(row: object): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(row)) {
     out[camelToSnake(key)] = value;
@@ -57,7 +57,7 @@ function toBindValue(value: unknown): SqliteBindValue {
 export async function upsertRecord(
   db: SqliteConnection,
   table: LocalTableName,
-  row: Record<string, unknown>,
+  row: object,
 ): Promise<void> {
   assertTable(table);
   const snake = rowToSnake(row);
@@ -139,6 +139,14 @@ export async function latestDailyRecord(
   return row === null ? null : rowToCamel(row);
 }
 
+/** Typed upsert for the daily_records table (daily-entry save path). */
+export async function upsertDailyRecord(
+  db: SqliteConnection,
+  row: object,
+): Promise<void> {
+  await upsertRecord(db, 'daily_records', row);
+}
+
 /** Batch INSERT OR REPLACE of pulled rows, applied inside one transaction. */
 export async function syncTable(
   db: SqliteConnection,
@@ -152,4 +160,10 @@ export async function syncTable(
   });
 }
 
-export const repositories = { upsertRecord, getRecord, queryRecords, latestDailyRecord };
+export const repositories = {
+  upsertRecord,
+  upsertDailyRecord,
+  getRecord,
+  queryRecords,
+  latestDailyRecord,
+};
