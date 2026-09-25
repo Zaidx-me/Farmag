@@ -8,6 +8,12 @@
 FROM node:22-bookworm-slim AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
+# Prisma's engine needs libssl, and installing it in the base stage also lets
+# the engine version be detected at build time. Without it Prisma warns and
+# defaults to "openssl-1.1.x" while the runtime actually provides OpenSSL 3.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends openssl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
 
@@ -24,6 +30,7 @@ RUN pnpm install --frozen-lockfile --filter "@poultry/api..."
 
 # --- build ------------------------------------------------------------------
 FROM deps AS build
+COPY tsconfig.base.json ./
 COPY packages/ ./packages/
 COPY apps/api/ ./apps/api/
 # The shared packages ship compiled output (main -> ./dist/index.js), so they
@@ -37,10 +44,6 @@ RUN pnpm --filter @poultry/shared-types build \
 FROM base AS runner
 ENV NODE_ENV=production
 ENV PORT=4000
-# Prisma's query engine needs libssl; argon2 is a prebuilt native addon.
-RUN apt-get update \
- && apt-get install -y --no-install-recommends openssl ca-certificates \
- && rm -rf /var/lib/apt/lists/*
 
 # Copy the built tree wholesale rather than pruning: selective copies break the
 # pnpm workspace symlinks and the Prisma engine/CLI that `db:deploy` invokes.
