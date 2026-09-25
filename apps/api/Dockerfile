@@ -11,8 +11,10 @@ ENV PATH=$PNPM_HOME:$PATH
 # Prisma's engine needs libssl, and installing it in the base stage also lets
 # the engine version be detected at build time. Without it Prisma warns and
 # defaults to "openssl-1.1.x" while the runtime actually provides OpenSSL 3.
+# curl is required at runtime: the orchestrator's healthcheck shells out to
+# curl/wget, and the slim base image ships neither.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends openssl ca-certificates \
+ && apt-get install -y --no-install-recommends openssl ca-certificates curl \
  && rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /app
