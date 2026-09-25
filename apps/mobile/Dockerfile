@@ -19,6 +19,7 @@ COPY packages/shared-types/package.json ./packages/shared-types/
 COPY packages/validation/package.json ./packages/validation/
 RUN pnpm install --frozen-lockfile --filter "@poultry/mobile..."
 
+COPY tsconfig.base.json ./
 COPY packages/ ./packages/
 COPY apps/mobile/ ./apps/mobile/
 
