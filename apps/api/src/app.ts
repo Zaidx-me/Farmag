@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
+import cors from '@fastify/cors';
 import fastifyRateLimit from '@fastify/rate-limit';
-import { env } from './config/env.js';
+import { corsOrigins, env } from './config/env.js';
 import { prisma } from './config/prisma.js';
 import { authRoutes } from './modules/auth/routes.js';
 import { alertsRoutes } from './modules/alerts/routes.js';
@@ -23,6 +24,8 @@ import { registerAuth } from './plugins/auth.js';
 export function buildApp() {
   const app = Fastify({ logger: { level: env.LOG_LEVEL } });
   app.decorate('prisma', prisma);
+  // First, so the onSend hook also stamps error responses a browser must be able to read.
+  void app.register(cors, { origin: corsOrigins, credentials: false });
   registerErrorHandler(app);
   registerAuth(app);
   void app.register(fastifyRateLimit, {

@@ -9,3 +9,8 @@ ios/
 coverage/
 .superpowers/
 .codegraph/
+
+# agent/session scratch dirs
+.omo/
+.playwright-mcp/
+.understand-anything/

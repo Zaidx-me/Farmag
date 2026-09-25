@@ -3,7 +3,25 @@ import type { ApiErrorCode } from '@poultry/shared-types';
 import { useAuthStore } from '../store/auth-store';
 import type { AuthUser, TokenPair } from '../store/auth-store';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+/**
+ * Resolved API base URL. The fallback must stay in sync with the API's default
+ * `PORT` (4000, see apps/api/src/config/env.ts) or an env-less dev run is dead.
+ */
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000';
+
+/** Every route is mounted behind this prefix (see apps/api/src/app.ts). */
+export const API_PREFIX = '/api/v1';
+
+/**
+ * Call sites pass resource paths (`/farms`), but the API serves them under `/api/v1`.
+ * Accepting both forms keeps call sites prefix-free and makes double-prefixing impossible.
+ */
+export function resolveApiPath(path: string): string {
+  if (path === API_PREFIX || path.startsWith(`${API_PREFIX}/`) || path.startsWith(`${API_PREFIX}?`)) {
+    return path;
+  }
+  return `${API_PREFIX}${path.startsWith('/') ? path : `/${path}`}`;
+}
 
 /** Normalized API error — thrown for every non-2xx response. */
 export class ApiClientError extends Error {
@@ -62,7 +80,7 @@ async function refreshSession(): Promise<{ user: AuthUser; tokens: TokenPair }> 
   const { refreshToken } = useAuthStore.getState();
   if (!refreshToken) throw new ApiClientError('TOKEN_INVALID', 'No refresh token available');
 
-  const response = await fetch(`${BASE_URL}/api/v1/auth/refresh`, {
+  const response = await fetch(`${API_BASE_URL}${resolveApiPath('/auth/refresh')}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refreshToken }),
@@ -90,7 +108,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const doFetch = async (token?: string): Promise<Response> => {
     const requestHeaders = { ...headers };
     if (token) requestHeaders.Authorization = `Bearer ${token}`;
-    return fetch(`${BASE_URL}${path}`, {
+    return fetch(`${API_BASE_URL}${resolveApiPath(path)}`, {
       method,
       headers: requestHeaders,
       body: body === undefined ? undefined : JSON.stringify(body),

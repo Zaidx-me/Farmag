@@ -1,6 +1,6 @@
-# Poultry Farm
+# Farmag
 
-Monorepo for the poultry-farm MVP, managed with pnpm workspaces.
+Poultry farm management platform. Monorepo managed with pnpm workspaces.
 
 - `apps/*` — deployable applications (API, web, mobile)
 - `packages/*` — shared libraries (db, config, types, utils)
