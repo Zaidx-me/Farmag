@@ -22,6 +22,11 @@ RUN pnpm install --frozen-lockfile --filter "@poultry/mobile..."
 COPY packages/ ./packages/
 COPY apps/mobile/ ./apps/mobile/
 
+# The shared packages point main at ./dist/index.js, so they must be compiled
+# before Metro resolves them from the app bundle.
+RUN pnpm --filter @poultry/shared-types build \
+ && pnpm --filter @poultry/validation build
+
 ARG EXPO_PUBLIC_API_URL
 ENV EXPO_PUBLIC_API_URL=$EXPO_PUBLIC_API_URL
 RUN pnpm --filter @poultry/mobile exec expo export --platform web --clear
